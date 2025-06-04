@@ -50,3 +50,4 @@ detection_postprocessor:  # Postprocessor
 
 
 detection_visualizer:  # Holoviz
+  headless: false

@@ -111,6 +111,20 @@ coco_label_map = {
     79: "toothbrush",
 }
 
+class ConsoleOp(Operator):
+    """Print the received text to the terminal."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def setup(self, spec: OperatorSpec):
+        spec.input("specs")
+
+    def compute(self, op_input, op_output, context):
+        specs = op_input.receive("specs")
+        for spec in specs:
+            print(f"CONSOLE: {spec.text} \n")
+
 
 class DetectionPostprocessorOp(Operator):
     """Example of an operator post processing the tensor from inference component.
@@ -199,10 +213,11 @@ class YoloDetApp(Application):
         source (str): Input source, either "replayer" or "v4l2".
     """
 
-    def __init__(self, video_dir, data, source="replayer"):
+    def __init__(self, video_dir, data, debug, source="replayer"):
         super().__init__()
         self.name = "YOLO Detection App"
         self.source = source
+        self.debug = debug
 
         # Set default paths if not provided
         if data == "none":
@@ -292,6 +307,9 @@ class YoloDetApp(Application):
         self.add_flow(
             detection_postprocessor, detection_visualizer, {("output_specs", "input_specs")}
         )
+        if (self.debug):
+            console = ConsoleOp(self, name="console")
+            self.add_flow(detection_postprocessor, console, {("output_specs", "specs")})
 
 
 if __name__ == "__main__":
@@ -322,9 +340,16 @@ if __name__ == "__main__":
         default="none",
         help="Path to the video directory.",
     )
+    parser.add_argument(
+        "-x",
+        "--debug",
+        action='store_true',
+        default=False,
+        help="enable CONSOLE log.",
+    )
 
     args = parser.parse_args()
 
-    app = YoloDetApp(video_dir=args.video_dir, data=args.data, source=args.source)
+    app = YoloDetApp(video_dir=args.video_dir, data=args.data, source=args.source, debug=args.debug)
     app.config(args.config)
     app.run()
