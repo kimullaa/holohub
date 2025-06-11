@@ -1,0 +1,21 @@
+replayer:  # VideoStreamReplayer
+  directory: "/workspace/holohub/data/depth_anything_v2"
+  basename: "running_on_pathway"
+  frame_rate: 0 # as specified in timestamps
+  repeat: true # default: false
+  realtime: true # default: true
+  count: 0 # default: 0 (no frame count restriction)
+
+preprocessor:
+  out_tensor_name: preprocessed
+  in_dtype: "rgb888"
+  out_dtype: "float32"
+  resize_width: 512
+  resize_height: 512
+  scale_min: -1.0
+  scale_max: 1.0
+
+holoviz:  # Holoviz
+  width: 512
+  height: 512
+  headless: false
