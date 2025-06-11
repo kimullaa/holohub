@@ -1,0 +1,32 @@
+{
+	"application": {
+		"name": "Anime",
+		"authors": [
+			{
+				"name": "Holoscan Team",
+				"affiliation": "NVIDIA"
+			}
+		],
+		"language": "Python",
+		"version": "1.0.0",
+		"changelog": {
+			"1.0": "Initial Release"
+		},
+		"holoscan_sdk": {
+			"minimum_required_version": "1.0.3",
+			"tested_versions": [
+			]
+		},
+		"platforms": [
+			"x86_64",
+			"aarch64"
+		],
+		"tags": [],
+		"ranking": 1,
+		"dependencies": {},
+		"run": {
+			"command": "python3 anime.py",
+			"workdir": "holohub_app_source"
+		}
+	}
+}
