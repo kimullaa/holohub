@@ -34,6 +34,7 @@ RUN pip install opencv-python
 #
 RUN mkdir -p /tmp/scripts
 COPY run /tmp/scripts/
+COPY utilities/holohub_autocomplete /tmp/scripts/utilities/
 RUN chmod +x /tmp/scripts/run
 RUN /tmp/scripts/run setup
 
@@ -41,6 +42,6 @@ WORKDIR /app/anime
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0/AnimeGANv3_Hayao_36.onnx
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0/AnimeGANv3_Shinkai_37.onnx
 
-RUN pip install onnxconverter-common onnxmltools
+RUN pip install onnxconverter-common onnxmltools onnxruntime
 COPY converter.py /tmp
 RUN python3 /tmp/converter.py

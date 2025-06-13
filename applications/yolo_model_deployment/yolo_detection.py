@@ -294,6 +294,7 @@ class YoloDetApp(Application):
                     color=[1.0, 0.0, 0.0, 1.0],
                 ),
             ],
+            headless=self.debug,
             **self.kwargs("detection_visualizer"),
         )
 
