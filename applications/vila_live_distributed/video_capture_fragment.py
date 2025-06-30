@@ -2,7 +2,7 @@ import os
 
 from holoscan.core import Fragment
 from holoscan.operators import V4L2VideoCaptureOp
-
+from holoscan.resources import UnboundedAllocator
 
 class VideoCaptureFragment(Fragment):
     def __init__(self, app, name, video_dir):
