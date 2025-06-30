@@ -6,9 +6,13 @@ replayer:  # VideoStreamReplayer
   realtime: true # default: true
   count: 0 # default: 0 (no frame count restriction)
 
+v4l2_source:
+  device: "/dev/video0"
+  #pixel_format: "YUYV"
+
+
 preprocessor:
   out_tensor_name: preprocessed
-  in_dtype: "rgb888"
   out_dtype: "float32"
   resize_width: 512
   resize_height: 512

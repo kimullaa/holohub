@@ -71,24 +71,36 @@ class AnimeInferOp(Operator):
 
 class AnimeApp(Application):
 
-    def __init__(self):
+    def __init__(self, source):
         """Initialize the Anime application"""
         super().__init__()
 
         # set name
         self.name = "Anime App"
+        self.source = source
 
     def compose(self):
         pool = UnboundedAllocator(self, name="pool")
 
-        source = VideoStreamReplayerOp(
-            self,
-            name="replayer_source",
-            **self.kwargs("replayer"),
-        )
+        if self.source == "replayer":
+            source = VideoStreamReplayerOp(
+                self,
+                name="replayer_source",
+                **self.kwargs("replayer"),
+            )
+            in_dtype="rgb888"
+        else:
+            source = V4L2VideoCaptureOp(
+                self,
+                name="v4l2_source",
+                allocator=pool,
+                **self.kwargs("v4l2_source"),
+            )
+            in_dtype="rgba8888"
 
         preprocessor = FormatConverterOp(
             self,
+            in_dtype=in_dtype,
             name="preprocessor",
             pool=pool,
             **self.kwargs("preprocessor"),
@@ -110,7 +122,17 @@ class AnimeApp(Application):
 
 if __name__ == "__main__":
 
-    app = AnimeApp()
+    parser = ArgumentParser(description="Anime Demo Application.")
+    parser.add_argument(
+        "-s",
+        "--source",
+        choices=["v4l2", "replayer"],
+        default="v4l2",
+        help=("Input source: 'v4l2' for V4L2 device or 'replayer' for video stream replayer."),
+    )
+    args = parser.parse_args()
+
+    app = AnimeApp(source=args.source)
     config_file = os.path.join(os.path.dirname(__file__), "anime.yaml")
     app.config(config_file)
     app.run()
