@@ -5,12 +5,9 @@ from holoscan.operators import V4L2VideoCaptureOp
 from holoscan.resources import UnboundedAllocator
 
 class VideoCaptureFragment(Fragment):
-    def __init__(self, app, name, video_dir):
+    def __init__(self, app, name, video_device="/dev/video0"):
         super().__init__(app, name)
-        self.video_dir = video_dir
-
-        if not os.path.exists(self.video_dir):
-            raise ValueError(f"Could not find video data: {video_dir=}")
+        self.video_device = video_device
 
     def compose(self):
         pool = UnboundedAllocator(self, name="pool")

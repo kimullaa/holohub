@@ -29,7 +29,7 @@ class V4L2toVLM(Application):
 
         # V4L2 to capture usb camera input or replayer to replay video
         if self.source == "v4l2":
-            source = VideoCaptureFragment(self, "video_cap_in", self.sample_data_path)
+            source = VideoCaptureFragment(self, "video_cap_in", self.video_device)
             source_output = "v4l2_source.signal"
 
         elif self.source == "replayer":
