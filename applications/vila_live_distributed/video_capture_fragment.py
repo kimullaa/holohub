@@ -4,7 +4,7 @@ from holoscan.core import Fragment
 from holoscan.operators import V4L2VideoCaptureOp
 
 
-class VideoInputFragment(Fragment):
+class VideoCaptureFragment(Fragment):
     def __init__(self, app, name, video_dir):
         super().__init__(app, name)
         self.video_dir = video_dir

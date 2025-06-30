@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from holoscan.core import Application
 
 from video_input_fragment import VideoInputFragment
+from video_capture_fragment import VideoCaptureFragment
 from inferier_fragment import InferierFragment
 
 
