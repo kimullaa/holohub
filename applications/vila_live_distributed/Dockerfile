@@ -39,7 +39,7 @@ RUN python3 -m pip install --no-cache-dir setuptools packaging && \
 
 # Build/install flash-attention 2 (NOTE: on Arm64 this will take between 1-1.5 hours)
 # MAX_JOBS is set to 4 to avoid running out of memory
-RUN MAX_JOBS=4 python3 -m pip install --no-cache-dir --no-build-isolation flash-attn~=2.5
+RUN MAX_JOBS=4 python3 -m pip install --no-cache-dir --no-build-isolation flash-attn==2.7.4.post1
 
 # Copy over app-specific requirements
 COPY applications/vila_live_distributed/requirements.txt applications/vila_live_distributed/llm-awq.patch /tmp/
