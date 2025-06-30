@@ -27,6 +27,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Holohub setup
 RUN mkdir -p /tmp/scripts
 COPY run /tmp/scripts/
+
+COPY utilities/holohub_autocomplete /tmp/scripts/utilities/
+
 RUN chmod +x /tmp/scripts/run
 RUN /tmp/scripts/run setup
 
