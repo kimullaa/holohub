@@ -15,6 +15,7 @@
 
 import os
 from argparse import ArgumentParser
+from holoscan.core import Tracker
 
 import cupy as cp
 import numpy as np
@@ -298,6 +299,7 @@ class YoloDetApp(Application):
             **self.kwargs("detection_visualizer"),
         )
 
+
         # Data flow
         self.add_flow(source, detection_visualizer, {(source_output, "receivers")})
         self.add_flow(source, detection_preprocessor)
@@ -353,4 +355,8 @@ if __name__ == "__main__":
 
     app = YoloDetApp(video_dir=args.video_dir, data=args.data, source=args.source, debug=args.debug)
     app.config(args.config)
-    app.run()
+    with Tracker(app, filename="tracker.log") as tracker:
+        try:
+            app.run()
+        except KeyboardInterrupt:
+            tracker.print()
