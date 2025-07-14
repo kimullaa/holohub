@@ -30,7 +30,7 @@ class VizFragment(Fragment):
             name="holoviz",
             width=self.width,
             height=self.height,
-            **self.kwargs("holoviz"),
+            **self.kwargs(self.name),
         )
 
         self.add_operator(visualizer)

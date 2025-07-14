@@ -60,7 +60,21 @@ class EndoscopyApp(Application):
         )
         viz_fragment = VizFragment(
             self,
-            "viz",
+            "holoviz",
+            width,
+            height,
+        )
+
+        viz_fragment_local = VizFragment(
+            self,
+            "holoviz_local",
+            width,
+            height,
+        )
+
+        viz_fragment_tcp = VizFragment(
+            self,
+            "holoviz_tcp",
             width,
             height,
         )
@@ -74,12 +88,31 @@ class EndoscopyApp(Application):
             viz_fragment,
             {("tool_tracking_postprocessor.out", "holoviz.receivers")},
         )
+        self.add_flow(
+            inference_fragment,
+            viz_fragment_tcp,
+            {("tool_tracking_postprocessor.out", "holoviz.receivers")},
+        )
 
         self.add_flow(
             video_in_fragment,
             viz_fragment,
             {("replayer.output", "holoviz.receivers")},
         )
+
+        self.add_flow(
+            video_in_fragment,
+            viz_fragment_local,
+            {("replayer.output", "holoviz.receivers")},
+        )
+
+        self.add_flow(
+            video_in_fragment,
+            viz_fragment_tcp,
+            {("replayer.output", "holoviz.receivers")},
+        )
+
+
 
 
 def parse_args() -> argparse.Namespace:
