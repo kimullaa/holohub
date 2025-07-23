@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from holoscan.core import Tracker
 import os
 import argparse
 from argparse import ArgumentParser
@@ -36,7 +37,7 @@ class AnimeApp(Application):
         if self.source == "v4l2":
             source = VideoCaptureFragment(self, "video_cap_in")
             source_output = "v4l2_source.signal"
-            in_dtype = "rgb888"
+            in_dtype = "rgba8888"
 
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in")
@@ -67,4 +68,9 @@ if __name__ == "__main__":
     app = AnimeApp(source=args.source)
     config_file = os.path.join(os.path.dirname(__file__), "anime.yaml")
     app.config(config_file)
-    app.run()
+    with Tracker(app, filename="tracker.log") as tracker:
+        try:
+            app.run()
+        except KeyboardInterrupt:
+            tracker.print()
+        tracker.print()
