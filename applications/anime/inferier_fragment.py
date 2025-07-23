@@ -67,7 +67,6 @@ class InferierFragment(Fragment):
 
         preprocessor = FormatConverterOp(
             self,
-            in_dtype=in_dtype,
             name="preprocessor",
             pool=pool,
             **self.kwargs("preprocessor"),
