@@ -14,7 +14,11 @@
 # limitations under the License.
 
 import os
+import argparse
 from argparse import ArgumentParser
+from video_input_fragment import VideoInputFragment
+from video_capture_fragment import VideoCaptureFragment
+from inferier_fragment import InferierFragment
 
 from holoscan.core import Application
 
@@ -30,11 +34,11 @@ class AnimeApp(Application):
 
     def compose(self):
         if self.source == "v4l2":
-            source = VideoCaptureFragment(self, "video_cap_in", self.video_device)
+            source = VideoCaptureFragment(self, "video_cap_in")
             source_output = "v4l2_source.signal"
 
         elif self.source == "replayer":
-            source = VideoInputFragment(self, "video_rep_in", self.sample_data_path)
+            source = VideoInputFragment(self, "video_rep_in")
             source_output = "replayer_source.output"
 
         inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_Hayao_16.onnx")
@@ -42,8 +46,7 @@ class AnimeApp(Application):
         self.add_flow(source, inferier, {(source_output, "proprocessor")})
 
 
-if __name__ == "__main__":
-
+def parse_args() -> argparse.Namespace:
     parser = ArgumentParser(description="Anime Demo Application.")
     parser.add_argument(
         "-s",
@@ -52,7 +55,12 @@ if __name__ == "__main__":
         default="v4l2",
         help=("Input source: 'v4l2' for V4L2 device or 'replayer' for video stream replayer."),
     )
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
+
+    return args
+
+if __name__ == "__main__":
+    args = parse_args()
 
     app = AnimeApp(source=args.source)
     config_file = os.path.join(os.path.dirname(__file__), "anime.yaml")

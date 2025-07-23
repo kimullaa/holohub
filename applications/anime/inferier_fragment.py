@@ -1,5 +1,4 @@
 
-
 import cupy as cp
 import cv2
 import holoscan as hs
@@ -14,20 +13,11 @@ from holoscan.operators import (
     V4L2VideoCaptureOp,
     VideoStreamReplayerOp,
 )
-from holoscan.resources import UnboundedAllocator
 
 import random
 
-
-
 import os
 from holoscan.core import  Fragment
-from holoscan.operators import (
-    FormatConverterOp,
-    HolovizOp,
-)
-from holoscan.resources import CudaStreamPool, UnboundedAllocator
-from vlm_webapp_op import VLMWebAppOp
 
 
 class AnimeInferOp(Operator):
@@ -75,7 +65,7 @@ class InferierFragment(Fragment):
 
     def compose(self):
 
-       preprocessor = FormatConverterOp(
+        preprocessor = FormatConverterOp(
             self,
             in_dtype=in_dtype,
             name="preprocessor",
