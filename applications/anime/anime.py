@@ -75,3 +75,7 @@ if __name__ == "__main__":
             for fragment_name, tracker in trackers.items():
                 print(f"Fragment:{fragment_name}")
                 tracker.print()
+
+        for fragment_name, tracker in trackers.items():
+            print(f"Fragment:{fragment_name}")
+            tracker.print()
