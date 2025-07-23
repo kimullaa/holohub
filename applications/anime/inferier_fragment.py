@@ -18,6 +18,7 @@ import random
 
 import os
 from holoscan.core import  Fragment
+from holoscan.resources import UnboundedAllocator
 
 
 class AnimeInferOp(Operator):
@@ -64,6 +65,7 @@ class InferierFragment(Fragment):
             raise ValueError(f"Could not find video data: {model_path=}")
 
     def compose(self):
+        pool = UnboundedAllocator(self, name="pool")
 
         preprocessor = FormatConverterOp(
             self,
