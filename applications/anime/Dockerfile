@@ -41,6 +41,7 @@ RUN /tmp/scripts/run setup
 WORKDIR /app/anime
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0/AnimeGANv3_Hayao_36.onnx
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0/AnimeGANv3_Shinkai_37.onnx
+RUN wget https://github.com/TachibanaYoshino/AnimeGANv3_Portrait_Inference/raw/refs/heads/tensorRT/onnxs/AnimeGANv3_PortraitSketch_25.onnx
 
 RUN pip install onnxconverter-common==1.14.0 onnxmltools==1.14.0 onnxruntime-gpu
 COPY converter.py /tmp

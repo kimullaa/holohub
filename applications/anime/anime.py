@@ -44,7 +44,7 @@ class AnimeApp(Application):
             source_output = "replayer_source.output"
             in_dtype = "rgba888"
 
-        inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_Hayao_16.onnx", in_dtype)
+        inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_PortraitSketch_25.onnx", in_dtype)
 
         self.add_flow(source, inferier, {(source_output, "preprocessor")})
 
