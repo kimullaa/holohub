@@ -68,9 +68,10 @@ if __name__ == "__main__":
     app = AnimeApp(source=args.source)
     config_file = os.path.join(os.path.dirname(__file__), "anime.yaml")
     app.config(config_file)
-    with Tracker(app, filename="tracker.log") as tracker:
+    with Tracker(app, filename="tracker.log") as trackers:
         try:
             app.run()
         except KeyboardInterrupt:
-            tracker.print()
-        tracker.print()
+            for fragment_name, tracker in trackers.items():
+                print(f"Fragment:{fragment_name}")
+                tracker.print()
