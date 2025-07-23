@@ -13,6 +13,7 @@ v4l2_source:
 
 preprocessor:
   out_tensor_name: preprocessed
+  in_dtype: "rgba888"
   out_dtype: "float32"
   resize_width: 512
   resize_height: 512

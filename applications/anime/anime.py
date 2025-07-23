@@ -43,7 +43,7 @@ class AnimeApp(Application):
 
         inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_Hayao_16.onnx")
 
-        self.add_flow(source, inferier, {(source_output, "proprocessor")})
+        self.add_flow(source, inferier, {(source_output, "preprocessor")})
 
 
 def parse_args() -> argparse.Namespace:
