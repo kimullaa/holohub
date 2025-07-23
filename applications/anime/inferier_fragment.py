@@ -57,9 +57,10 @@ class AnimeInferOp(Operator):
 
 
 class InferierFragment(Fragment):
-    def __init__(self, app, name, model_path):
+    def __init__(self, app, name, model_path, in_dtype):
         super().__init__(app, name)
         self.model_path = model_path
+        self.in_dtype = in_dtype
 
         if not os.path.exists(self.model_path):
             raise ValueError(f"Could not find video data: {model_path=}")
@@ -70,6 +71,7 @@ class InferierFragment(Fragment):
         preprocessor = FormatConverterOp(
             self,
             name="preprocessor",
+            in_dtype=self.in_dtype,
             pool=pool,
             **self.kwargs("preprocessor"),
         )
