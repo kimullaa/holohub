@@ -15,6 +15,6 @@ class VideoCaptureFragment(Fragment):
                 self,
                 name="v4l2_source",
                 allocator=pool,
-                **v4l2_args,
+                **self.kwargs("v4l2_source"),
             )
         self.add_operator(input_op)

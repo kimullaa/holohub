@@ -8,7 +8,7 @@ replayer_source:  # VideoStreamReplayer
 
 v4l2_source:
   device: "/dev/video0"
-  #pixel_format: "YUYV"
+  pixel_format: "YUYV"
 
 
 preprocessor:
