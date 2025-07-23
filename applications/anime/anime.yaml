@@ -1,4 +1,4 @@
-replayer:  # VideoStreamReplayer
+replayer_source:  # VideoStreamReplayer
   directory: "/workspace/holohub/data/anime"
   basename: "running_on_pathway"
   frame_rate: 0 # as specified in timestamps
