@@ -84,6 +84,7 @@ class InferierFragment(Fragment):
 
         animeInfer = AnimeInferOp(self, name="my infer", model_path=self.model_path)
 
+        self.add_operator(preprocessor)
         self.add_flow(preprocessor, animeInfer, {("tensor", "in_tensor")})
         self.add_flow(animeInfer, holoviz, {("output_image", "receivers")})
 

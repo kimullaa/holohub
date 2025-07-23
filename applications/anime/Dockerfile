@@ -42,6 +42,6 @@ WORKDIR /app/anime
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0/AnimeGANv3_Hayao_36.onnx
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0/AnimeGANv3_Shinkai_37.onnx
 
-RUN pip install onnxconverter-common onnxmltools onnxruntime
+RUN pip install onnxconverter-common==1.14.0 onnxmltools==1.14.0 onnxruntime-gpu
 COPY converter.py /tmp
 RUN python3 /tmp/converter.py
