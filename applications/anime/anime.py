@@ -36,14 +36,14 @@ class AnimeApp(Application):
         if self.source == "v4l2":
             source = VideoCaptureFragment(self, "video_cap_in")
             source_output = "v4l2_source.signal"
-            in_dtype = "rgb888"
+            in_dtype = "rgba8888"
 
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in")
             source_output = "replayer_source.output"
             in_dtype = "rgba888"
 
-        inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_Hayao_16.onnx", in_dtype)
+        inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_PortraitSketch_25.onnx", in_dtype)
 
         self.add_flow(source, inferier, {(source_output, "preprocessor")})
 
