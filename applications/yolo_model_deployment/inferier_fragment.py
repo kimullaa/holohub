@@ -22,13 +22,13 @@ class InferierFragment(Fragment):
         self.in_dtype = in_dtype
 
     def compose(self):
-
+        pool = UnboundedAllocator(self, name="pool")
         # Operators
         detection_preprocessor = FormatConverterOp(
             self,
-            name="detection_preprocessor",
             pool=pool,
-            in_dtype=in_dtype,
+            name="detection_preprocessor",
+            in_dtype=self.in_dtype,
             **self.kwargs("detection_preprocessor"),
         )
 
