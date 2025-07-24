@@ -17,7 +17,7 @@
 replayer_source:  # VideoStreamReplayer
   # directory: "../data/ultrasound/video"
   basename: "meeting"
-  frame_rate: 0 # as specified in timestamps
+  frame_rate: 0.0 # as specified in timestamps
   repeat: true # default: false
   realtime: true # default: true
   count: 0 # default: 0 (no frame count restriction)

@@ -62,12 +62,12 @@ class YoloDetApp(Application):
             in_dtype = "rgba8888"
 
         elif self.source == "replayer":
-            source = VideoInputFragment(self, "video_rep_in")
+            source = VideoInputFragment(self, "video_rep_in", self.video_dir)
             source_output = "replayer_source.output"
             in_dtype = "rgb888"
 
         inferier = InferierFragment(self, "inferier", self.data, self.debug, in_dtype)
-        self.add_flow(source, inferier, {(source_output, "preprocessor")})
+        self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
         self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
         
 
