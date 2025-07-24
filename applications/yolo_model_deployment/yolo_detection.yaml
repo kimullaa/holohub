@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ---
-replayer:  # VideoStreamReplayer
+replayer_source:  # VideoStreamReplayer
   # directory: "../data/ultrasound/video"
   basename: "meeting"
   frame_rate: 0 # as specified in timestamps
