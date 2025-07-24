@@ -42,7 +42,7 @@ class AnimeApp(Application):
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in")
             source_output = "replayer_source.output"
-            in_dtype = "rgba888"
+            in_dtype = "rgb888"
 
         inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_PortraitSketch_25.onnx", in_dtype)
 
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     app = AnimeApp(source=args.source)
     config_file = os.path.join(os.path.dirname(__file__), "anime.yaml")
     app.config(config_file)
-    with Tracker(app, filename="tracker.log") as trackers:
+    with Tracker(app, filename="tracker_anime.log") as trackers:
         try:
             app.run()
         except KeyboardInterrupt:
