@@ -49,7 +49,10 @@ class AnimeInferOp(Operator):
 
         input_array = cp.expand_dims(input_array, axis=0)
 
-        result  = self.session.run([self.output_name], {self.input_name: cp.asnumpy(input_array).astype(np.float32) })
+        if model_path.endswith("_16.onnx"):
+            result  = self.session.run([self.output_name], {self.input_name: cp.asnumpy(input_array).astype(np.float16) })
+        else:
+            result  = self.session.run([self.output_name], {self.input_name: cp.asnumpy(input_array).astype(np.float32) })
         converted = self.post_process(result[0], (input_array.shape[1], input_array.shape[2]) )
 
         out_message = { "image": Tensor.as_tensor(converted) }
