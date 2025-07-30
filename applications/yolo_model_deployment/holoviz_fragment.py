@@ -15,8 +15,9 @@ import cupy as cp
 import numpy as np
 
 class HolovizFragment(Fragment):
-    def __init__(self, app, name):
+    def __init__(self, app, name, debug):
         super().__init__(app, name)
+        self.debug = debug
 
     def compose(self):
         pool = UnboundedAllocator(self, name="pool")

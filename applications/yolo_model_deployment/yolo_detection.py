@@ -67,7 +67,7 @@ class YoloDetApp(Application):
             source_output = "replayer_source.output"
             in_dtype = "rgb888"
 
-        holoviz = HolovizFragment(self, "holoviz")
+        holoviz = HolovizFragment(self, "holoviz", self.debug)
 
         inferier = InferierFragment(self, "inferier", self.data, self.debug, in_dtype)
         self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
