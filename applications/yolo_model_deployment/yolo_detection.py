@@ -21,6 +21,7 @@ from holoscan.core import Application, Operator, OperatorSpec
 from video_input_fragment import VideoInputFragment
 from video_capture_fragment import VideoCaptureFragment
 from inferier_fragment import InferierFragment
+from holoviz_fragment import HolovizFragment
 
 
 
@@ -66,9 +67,13 @@ class YoloDetApp(Application):
             source_output = "replayer_source.output"
             in_dtype = "rgb888"
 
+        HolovizFragment
+
         inferier = InferierFragment(self, "inferier", self.data, self.debug, in_dtype)
         self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
         self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
+
+        self.add_flow(source, holoviz, {(source_output, "detection_visualizer.receivers")})
         
 
 
