@@ -38,6 +38,8 @@ class HolovizFragment(Fragment):
             **self.kwargs("detection_visualizer"),
         )
 
+        self.add_operator(detection_visualizer)
+
 
 
 coco_label_map = {
