@@ -61,11 +61,7 @@ class YoloDetApp(Application):
             source = VideoCaptureFragment(self, "video_cap_in")
             source_output = "v4l2_source.signal"
             in_dtype = "rgba8888"
-
-
             source2 = VideoCaptureFragment(self, "video_cap_in")
-            source_output = "v4l2_source.signal"
-            in_dtype = "rgba8888"
 
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in", self.video_dir)
