@@ -61,7 +61,6 @@ class YoloDetApp(Application):
             source = VideoCaptureFragment(self, "video_cap_in")
             source_output = "v4l2_source.signal"
             in_dtype = "rgba8888"
-            source2 = VideoCaptureFragment(self, "video_cap_in")
 
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in", self.video_dir)
@@ -73,8 +72,8 @@ class YoloDetApp(Application):
         self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
 
         inferier2 = InferierFragment(self, "inferier2", self.data, self.debug, in_dtype)
-        self.add_flow(source2, inferier2, {(source_output, "detection_preprocessor")})
-        self.add_flow(source2, inferier2, {(source_output, "detection_visualizer.receivers")})
+        self.add_flow(source, inferier2, {(source_output, "detection_preprocessor")})
+        self.add_flow(source, inferier2, {(source_output, "detection_visualizer.receivers")})
 
 
         #holoviz = HolovizFragment(self, "holoviz", self.debug)
