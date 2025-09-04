@@ -61,6 +61,7 @@ class YoloDetApp(Application):
         if self.source == "v4l2":
             source = VideoCaptureFragment(self, "video_cap_in")
             source_output = "v4l2_source.signal"
+            source.enable_metadata(False)
 
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in", self.video_dir)
@@ -120,7 +121,6 @@ if __name__ == "__main__":
     app.config(args.config)
     with Tracker(app, filename="tracker_yolo.log") as trackers:
         try:
-            app.enable_metadata(False)
             app.run()
         except KeyboardInterrupt:
             for fragment_name, tracker in trackers.items():
