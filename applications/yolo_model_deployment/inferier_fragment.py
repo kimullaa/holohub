@@ -1,4 +1,4 @@
-from holoscan.core import Application, Operator, OperatorSpec, Tensor, MetadataPolicy
+from holoscan.core import Application, Operator, OperatorSpec, Tensor
 from holoscan.operators import (
     FormatConverterOp,
     HolovizOp,
@@ -59,7 +59,7 @@ class InferierFragment(Fragment):
             **self.kwargs("detection_visualizer"),
         )
 
-        if self.source == "replayer":
+        if self.source == "v4l2":
             # Operators
             detection_preprocessor_v4l2 = FormatConverterOp(
                 self,
@@ -79,7 +79,7 @@ class InferierFragment(Fragment):
             self.add_flow(detection_preprocessor_common, detection_inference, {("", "receivers")})
             self.add_flow(detection_preprocessor_v4l2, detection_visualizer, {("", "receivers")})
 
-        if self.source == "v4l2":
+        if self.source == "replayer":
             detection_preprocessor = FormatConverterOp(
                 self,
                 pool=pool,

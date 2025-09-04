@@ -30,7 +30,7 @@ detection_preprocessor_v4l2:  # FormatConverter
     in_dtype: "yuyv"
     out_dtype: "rgb888"
 
-detection_preprocessor:  # FormatConverter
+detection_preprocessor_common:  # FormatConverter
     out_tensor_name: source_video
     in_dtype: "rgb888"
     out_dtype: "float32"
