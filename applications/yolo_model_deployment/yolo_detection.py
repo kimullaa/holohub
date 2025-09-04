@@ -64,10 +64,10 @@ class YoloDetApp(Application):
         elif self.source == "replayer":
             source = VideoInputFragment(self, "video_rep_in", self.video_dir)
             source_output = "replayer_source.output"
+            self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
 
         inferier = InferierFragment(self, "inferier", self.data, self.debug, self.source)
         self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
-        self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
 
 
 def parse_args() -> argparse.Namespace:
@@ -119,6 +119,7 @@ if __name__ == "__main__":
     app.config(args.config)
     with Tracker(app, filename="tracker_yolo.log") as trackers:
         try:
+            app.enable_metadata(False)
             app.run()
         except KeyboardInterrupt:
             for fragment_name, tracker in trackers.items():
