@@ -77,7 +77,7 @@ class InferierFragment(Fragment):
 
             self.add_flow(detection_preprocessor_v4l2, detection_preprocessor_common, {("", "")})
             self.add_flow(detection_preprocessor_common, detection_inference, {("", "receivers")})
-            self.add_flow(detection_preprocessor_v4l2, detection_visualizer, {("", "receivers")})
+            self.add_flow(detection_preprocessor_v4l2, detection_visualizer, {("signal", "receivers")})
 
         if self.source == "replayer":
             detection_preprocessor = FormatConverterOp(
@@ -87,7 +87,6 @@ class InferierFragment(Fragment):
                 **self.kwargs("detection_preprocessor_common"),
             )
             self.add_flow(detection_preprocessor, detection_inference, {("", "receivers")})
-            self.add_flow(detection_preprocessor, detection_visualizer, {("", "receivers")})
 
         # Data flow
         self.add_flow(detection_inference, detection_postprocessor, {("transmitter", "")})

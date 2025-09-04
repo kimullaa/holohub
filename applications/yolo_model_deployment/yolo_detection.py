@@ -67,6 +67,7 @@ class YoloDetApp(Application):
 
         inferier = InferierFragment(self, "inferier", self.data, self.debug, self.source)
         self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
+        self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
 
 
 def parse_args() -> argparse.Namespace:
