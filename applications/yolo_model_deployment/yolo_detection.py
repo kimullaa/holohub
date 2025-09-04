@@ -57,7 +57,6 @@ class YoloDetApp(Application):
 
     def compose(self):
         inferier = InferierFragment(self, "inferier", self.data, self.debug, self.source)
-        self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
 
         if self.source == "v4l2":
             source = VideoCaptureFragment(self, "video_cap_in")
@@ -67,6 +66,8 @@ class YoloDetApp(Application):
             source = VideoInputFragment(self, "video_rep_in", self.video_dir)
             source_output = "replayer_source.output"
             self.add_flow(source, inferier, {(source_output, "detection_visualizer.receivers")})
+
+        self.add_flow(source, inferier, {(source_output, "detection_preprocessor")})
 
 
 
