@@ -1,4 +1,4 @@
-from holoscan.core import Application, Operator, OperatorSpec, Tensor
+from holoscan.core import Application, Operator, OperatorSpec, Tensor, MetadataPolicy
 from holoscan.operators import (
     FormatConverterOp,
     HolovizOp,
@@ -15,22 +15,14 @@ import cupy as cp
 import numpy as np
 
 class InferierFragment(Fragment):
-    def __init__(self, app, name, data, debug, in_dtype):
+    def __init__(self, app, name, data, debug, source):
         super().__init__(app, name)
         self.data = data
         self.debug = debug
-        self.in_dtype = in_dtype
+        self.source = source
 
     def compose(self):
         pool = UnboundedAllocator(self, name="pool")
-        # Operators
-        detection_preprocessor = FormatConverterOp(
-            self,
-            pool=pool,
-            name="detection_preprocessor",
-            in_dtype=self.in_dtype,
-            **self.kwargs("detection_preprocessor"),
-        )
 
         inference_kwargs = self.kwargs("detection_inference")
         for k, v in inference_kwargs["model_path_map"].items():
@@ -67,18 +59,47 @@ class InferierFragment(Fragment):
             **self.kwargs("detection_visualizer"),
         )
 
+        if self.source == "replayer":
+            # Operators
+            detection_preprocessor_v4l2 = FormatConverterOp(
+                self,
+                pool=pool,
+                name="detection_preprocessor",
+                **self.kwargs("detection_preprocessor_v4l2"),
+            )
+
+            detection_preprocessor_common = FormatConverterOp(
+                self,
+                pool=pool,
+                name="detection_preprocessor_common",
+                **self.kwargs("detection_preprocessor_common"),
+            )
+
+            self.add_flow(detection_preprocessor_v4l2, detection_preprocessor_common, {("", "")})
+            self.add_flow(detection_preprocessor_common, detection_inference, {("", "receivers")})
+            self.add_flow(detection_preprocessor_v4l2, detection_visualizer, {("", "receivers")})
+
+        if self.source == "v4l2":
+            detection_preprocessor = FormatConverterOp(
+                self,
+                pool=pool,
+                name="detection_preprocessor",
+                **self.kwargs("detection_preprocessor_common"),
+            )
+            self.add_flow(detection_preprocessor, detection_inference, {("", "receivers")})
+            self.add_flow(detection_preprocessor, detection_visualizer, {("", "receivers")})
+
         # Data flow
-        self.add_flow(detection_preprocessor, detection_inference, {("", "receivers")})
         self.add_flow(detection_inference, detection_postprocessor, {("transmitter", "")})
         # Connect the postprocessor to the visualizer
         self.add_flow(detection_postprocessor, detection_visualizer, {("outputs", "receivers")})
         self.add_flow(
             detection_postprocessor, detection_visualizer, {("output_specs", "input_specs")}
         )
+
         if (self.debug):
             console = ConsoleOp(self, name="console")
             self.add_flow(detection_postprocessor, console, {("output_specs", "specs")})
-
 
 
 
