@@ -60,10 +60,10 @@ class AnimeInferOp(Operator):
 
 
 class InferierFragment(Fragment):
-    def __init__(self, app, name, model_path, in_dtype):
+    def __init__(self, app, name, model_path, source):
         super().__init__(app, name)
         self.model_path = model_path
-        self.in_dtype = in_dtype
+        self.source = source
 
         if not os.path.exists(self.model_path):
             raise ValueError(f"Could not find video data: {model_path=}")
@@ -71,14 +71,33 @@ class InferierFragment(Fragment):
     def compose(self):
         pool = UnboundedAllocator(self, name="pool")
 
-        preprocessor = FormatConverterOp(
-            self,
-            name="preprocessor",
-            in_dtype=self.in_dtype,
-            pool=pool,
-            **self.kwargs("preprocessor"),
-        )
+        if self.source == "v4l2":
+            preprocessor_v4l2 = FormatConverterOp(
+                self,
+                name="preprocessor",
+                pool=pool,
+                **self.kwargs("preprocessor_v4l2"),
+            )
+            preprocessor_common = FormatConverterOp(
+                self,
+                name="preprocessor_common",
+                pool=pool,
+                **self.kwargs("preprocessor_common"),
+            )
+            self.add_operator(preprocessor_v4l2)
+            self.add_flow(preprocessor_v4l2, preprocessor_common)
 
+        elif self.source == "replayer":
+            preprocessor_common = FormatConverterOp(
+                self,
+                name="preprocessor",
+                pool=pool,
+                **self.kwargs("preprocessor_common"),
+            )
+            self.add_operator(preprocessor_common)
+
+        animeInfer = AnimeInferOp(self, name="my infer", model_path=self.model_path)
+        self.add_flow(preprocessor_common, animeInfer, {("tensor", "in_tensor")})
         holoviz = HolovizOp(
             self,
             allocator=pool,
@@ -86,10 +105,4 @@ class InferierFragment(Fragment):
             window_title="Anime",
             **self.kwargs("holoviz"),
         )
-
-        animeInfer = AnimeInferOp(self, name="my infer", model_path=self.model_path)
-
-        self.add_operator(preprocessor)
-        self.add_flow(preprocessor, animeInfer, {("tensor", "in_tensor")})
         self.add_flow(animeInfer, holoviz, {("output_image", "receivers")})
-

@@ -9,9 +9,14 @@ replayer_source:  # VideoStreamReplayer
 v4l2_source:
   device: "/dev/video0"
   pixel_format: "YUYV"
+  pass_through: true
 
+preprocessor_v4l2:
+  in_dtype: "yuyv"
+  out_dtype: "rgb888"
 
-preprocessor:
+preprocessor_common:
+  in_dtype: "rgb888"
   out_tensor_name: preprocessed
   out_dtype: "float32"
   resize_width: 512
