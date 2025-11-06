@@ -49,6 +49,8 @@ class AnimeApp(Application):
             model = "/app/anime/AnimeGANv3_Hayao_36.onnx"
         elif (self.model == "hayao16"):
             model = "/app/anime/AnimeGANv3_Hayao_16.onnx"
+        elif (self.model == "ghibli_c1"):
+            model = "/app/anime/AnimeGANv3_large_Ghibli_c1_e299.onnx"
 
         inferier = InferierFragment(self, "inferier", model, self.source)
         self.add_flow(source, inferier, {(source_output, "preprocessor")})
@@ -66,9 +68,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-m",
         "--model",
-        choices=["portrait", "hayao36", "hayao16"],
+        choices=["portrait", "hayao36", "hayao16", "ghibli_c1"],
         default="hayao16",
-        help=("Model: 'portrait' for AnimeGANv3_PortraitSketch_25.onnx, 'hayao36' for AnimeGANv3_Hayao_36.onnx, 'hayao16' for AnimeGANv3_Hayao_16.onnx,"),
+        help=("Model: 'portrait' for AnimeGANv3_PortraitSketch_25.onnx, 'hayao36' for AnimeGANv3_Hayao_36.onnx, 'hayao16' for AnimeGANv3_Hayao_16.onnx, 'ghibli_c1' for AnimeGANv3_large_Ghibli_c1_e299.onnx."),
     )
     args, _ = parser.parse_known_args()
 
