@@ -25,13 +25,14 @@ from holoscan.core import Application
 
 class AnimeApp(Application):
 
-    def __init__(self, source):
+    def __init__(self, source, model):
         """Initialize the Anime application"""
         super().__init__()
 
         # set name
         self.name = "Anime App"
         self.source = source
+        self.model = model
 
     def compose(self):
         if self.source == "v4l2":
@@ -42,10 +43,14 @@ class AnimeApp(Application):
             source = VideoInputFragment(self, "video_rep_in")
             source_output = "replayer_source.output"
 
-        # inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_PortraitSketch_25.onnx", in_dtype)
-        # inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_Hayao_36.onnx", in_dtype)
-        inferier = InferierFragment(self, "inferier", "/app/anime/AnimeGANv3_Hayao_16.onnx", self.source)
+        if (self.model == "portrait"):
+            model = "/app/anime/AnimeGANv3_PortraitSketch_25.onnx"
+        elif (self.model == "hayao36"):
+            model = "/app/anime/AnimeGANv3_Hayao_36.onnx"
+        elif (self.model == "hayao16"):
+            model = "/app/anime/AnimeGANv3_Hayao_16.onnx"
 
+        inferier = InferierFragment(self, "inferier", model, self.source)
         self.add_flow(source, inferier, {(source_output, "preprocessor")})
 
 
@@ -58,6 +63,13 @@ def parse_args() -> argparse.Namespace:
         default="v4l2",
         help=("Input source: 'v4l2' for V4L2 device or 'replayer' for video stream replayer."),
     )
+    parser.add_argument(
+        "-m",
+        "--model",
+        choices=["portrait", "hayao36", "hayao16"],
+        default="hayao16",
+        help=("Model: 'portrait' for AnimeGANv3_PortraitSketch_25.onnx, 'hayao36' for AnimeGANv3_Hayao_36.onnx, 'hayao16' for AnimeGANv3_Hayao_16.onnx,"),
+    )
     args, _ = parser.parse_known_args()
 
     return args
@@ -65,7 +77,7 @@ def parse_args() -> argparse.Namespace:
 if __name__ == "__main__":
     args = parse_args()
 
-    app = AnimeApp(source=args.source)
+    app = AnimeApp(source=args.source, model=args.model)
     config_file = os.path.join(os.path.dirname(__file__), "anime.yaml")
     app.config(config_file)
     with Tracker(app, filename="tracker_anime.log") as trackers:
