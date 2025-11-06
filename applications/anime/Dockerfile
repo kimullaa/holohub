@@ -44,5 +44,5 @@ RUN wget https://github.com/TachibanaYoshino/AnimeGANv3/releases/download/v1.1.0
 RUN wget https://github.com/TachibanaYoshino/AnimeGANv3_Portrait_Inference/raw/refs/heads/tensorRT/onnxs/AnimeGANv3_PortraitSketch_25.onnx
 
 RUN pip install onnxconverter-common==1.14.0 onnxmltools==1.14.0 onnxruntime-gpu
-COPY converter.py /tmp
+COPY applications/anime/converter.py /tmp
 RUN python3 /tmp/converter.py
