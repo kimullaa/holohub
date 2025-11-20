@@ -1,0 +1,30 @@
+replayer_source:  # VideoStreamReplayer
+  directory: "/workspace/holohub/data/anime"
+  basename: "running_on_pathway"
+  frame_rate: 0 # as specified in timestamps
+  repeat: true # default: false
+  realtime: true # default: true
+  count: 0 # default: 0 (no frame count restriction)
+
+v4l2_source:
+  device: "/dev/video0"
+  pixel_format: "YUYV"
+  pass_through: true
+
+preprocessor_v4l2:
+  in_dtype: "yuyv"
+  out_dtype: "rgb888"
+
+preprocessor_common:
+  in_dtype: "rgb888"
+  out_tensor_name: preprocessed
+  out_dtype: "float32"
+  resize_width: 512
+  resize_height: 512
+  scale_min: -1.0
+  scale_max: 1.0
+
+holoviz:  # Holoviz
+  width: 512
+  height: 512
+  headless: false

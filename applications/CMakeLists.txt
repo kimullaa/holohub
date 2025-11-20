@@ -40,6 +40,9 @@ add_holohub_application(deltacast_transmitter DEPENDS
 
 add_holohub_application(depth_anything_v2)
 
+add_holohub_application(anime)
+
+
 add_subdirectory(distributed)
 
 add_holohub_application(endoscopy_depth_estimation)
