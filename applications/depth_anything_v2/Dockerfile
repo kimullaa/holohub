@@ -43,9 +43,10 @@ WORKDIR /app
 RUN git clone --depth 1 https://github.com/DepthAnything/Depth-Anything-V2.git \
     && git clone --depth 1 https://github.com/spacewalk01/depth-anything-tensorrt.git \
     && mv depth-anything-tensorrt/depth_anything_v2/dpt.py Depth-Anything-V2/depth_anything_v2 \
-    && mv depth-anything-tensorrt/depth_anything_v2/export_v2.py Depth-Anything-V2
+    && mv depth-anything-tensorrt/depth_anything_v2/export_v2.py Depth-Anything-V2 \
+    && sed -i "s#opset_version=11#opset_version=18#g" Depth-Anything-V2/export_v2.py
 
-RUN pip install onnx onnx-graphsurgeon onnxscript \
+RUN pip install onnx==1.19.1 onnx-graphsurgeon onnxscript \
     && pip install -r Depth-Anything-V2/requirements.txt
 
 # Change to the repository directory
