@@ -1,0 +1,198 @@
+# syntax=docker/dockerfile:1
+#
+# Workaround Dockerfile to add RDMA/InfiniBand support to Holoscan SDK v3.7.0+
+#
+# This builds UCX with RDMA support and replaces the UCX libraries in the
+# existing container. Both core libraries and transport modules are replaced
+# to ensure API compatibility.
+#
+# The issue is that UCX in v3.7.0+ was built without RDMA dependencies, missing:
+# - libuct_ib.so: InfiniBand transport
+# - libuct_ib_mlx5.so: Mellanox ConnectX optimized transport
+# - libuct_rdmacm.so: RDMA connection manager
+# - libuct_cuda_gdrcopy.so: GPU Direct RDMA copy
+# - libuct_xpmem.so: Cross-process memory (zero-copy intra-node)
+# - libucx_perftest_mad.so: InfiniBand MAD perftest support
+# - libucx_fuse.so: FUSE debugging interface
+# - libuct_ib_efa.so: AWS Elastic Fabric Adapter transport
+#
+# Usage:
+#   docker build -f Dockerfile.ucx-rdma-workaround -t holoscan:v3.8.0-rdma .
+#
+# Verify RDMA support:
+#   docker run --rm holoscan:v3.8.0-rdma ls /opt/nvidia/holoscan/lib/ucx | grep -E "(ib|rdmacm|gdrcopy|xpmem|mad|fuse|efa)"
+
+############################################################
+# Base image for building UCX
+############################################################
+ARG BASE_IMAGE=nvcr.io/nvidia/clara-holoscan/holoscan:v3.8.0-cuda12-dgpu
+FROM ${BASE_IMAGE} AS ucx-builder
+
+ARG UCX_VERSION=1.19.0
+ARG MAX_PROC=16
+
+SHELL ["/bin/bash", "-c"]
+
+# Install build tools and RDMA dependencies for UCX:
+# - rdma-core: Core RDMA userspace libraries and utilities
+# - libibverbs-dev: Development files for libibverbs (InfiniBand verbs library)
+# - librdmacm-dev: Development files for librdmacm (RDMA connection manager library)
+# - check: Unit testing framework required by gdrcopy build
+# - libibmad-dev, libibumad-dev: MAD dependencies (for libucx_perftest_mad.so)
+# - libfuse3-dev: FUSE dependency (for libucx_fuse.so)
+# - libfabric-dev: EFA/libfabric dependency (for libuct_ib_efa.so)
+# - patchelf: Tool to modify ELF binaries (for fixing rpath)
+# - pkg-config: Required to locate FUSE3 and other libraries during configure
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        autoconf \
+        automake \
+        libtool \
+        pkg-config \
+        rdma-core \
+        libibverbs-dev \
+        librdmacm-dev \
+        check \
+        libibmad-dev \
+        libibumad-dev \
+        libfuse3-dev \
+        libfabric-dev \
+        patchelf \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install gdrcopy for GPU Direct RDMA support (libuct_cuda_gdrcopy.so)
+ARG GDRCOPY_VERSION=2.4.4
+WORKDIR /opt/gdrcopy
+RUN git clone --depth 1 --branch v${GDRCOPY_VERSION} \
+        https://github.com/NVIDIA/gdrcopy.git src
+WORKDIR /opt/gdrcopy/src
+# Build only the library (not the kernel module which requires host access)
+RUN make CUDA=/usr/local/cuda lib lib_install prefix=/opt/gdrcopy/install
+
+# Install XPMEM for zero-copy intra-node communication (libuct_xpmem.so)
+# Note: Like gdrcopy, the kernel module must be installed on the HOST separately.
+#       This only builds the userspace library.
+ARG XPMEM_VERSION=2.7.3
+WORKDIR /opt/xpmem
+RUN git clone --depth 1 --branch v${XPMEM_VERSION} \
+        https://github.com/openucx/xpmem.git src
+WORKDIR /opt/xpmem/src
+RUN ./autogen.sh && \
+    ./configure --prefix=/opt/xpmem/install \
+        --disable-kernel-module && \
+    make -j$(nproc) && \
+    make install
+
+WORKDIR /opt/ucx
+
+# Clone UCX source
+RUN git clone --depth 1 --recurse-submodules --shallow-submodules \
+        --branch v${UCX_VERSION} \
+        https://github.com/openucx/ucx.git src
+
+# IMPORTANT FIX:
+#   - enable modules
+#   - ensure symbols are exported
+#   - include mlx5-dv, verbs, rdmacm, gdrcopy, xpmem, cuda
+ENV CFLAGS="-fvisibility=default"
+ENV CXXFLAGS="-fvisibility=default"
+
+# Build UCX with RDMA, gdrcopy, xpmem, MAD, FUSE, EFA, and statistics support
+WORKDIR /opt/ucx/src
+RUN ./autogen.sh && \
+    ./contrib/configure-release --prefix=/opt/ucx/install \
+    --enable-optimizations \
+    --enable-mt \
+    --enable-cma \
+    --enable-stats \
+    --with-verbs \
+    --with-mlx5-dv \
+    --with-rdmacm \
+    --with-cuda=/usr/local/cuda \
+    --with-gdrcopy=/opt/gdrcopy/install \
+    --with-xpmem=/opt/xpmem/install \
+    --with-mad \
+    --with-fuse3 \
+    --with-efa \
+    --without-java \
+    --without-go
+
+RUN make -j $(( $(nproc) > ${MAX_PROC} ? ${MAX_PROC} : $(nproc) ))
+RUN make install
+
+# Patch rpath for UCX core libraries to use $ORIGIN for relocatable installation.
+# This ensures libraries find their dependencies relative to their own location
+# rather than using absolute paths from the build environment.
+RUN patchelf --set-rpath '$ORIGIN' /opt/ucx/install/lib/libucs.so.0 && \
+    patchelf --set-rpath '$ORIGIN' /opt/ucx/install/lib/libucm.so.0 && \
+    patchelf --set-rpath '$ORIGIN' /opt/ucx/install/lib/libucp.so.0 && \
+    patchelf --set-rpath '$ORIGIN' /opt/ucx/install/lib/libuct.so.0 && \
+    patchelf --set-rpath '$ORIGIN' /opt/ucx/install/lib/libucs_signal.so.0
+
+# Patch rpath for UCX binaries to use the Holoscan lib directory.
+# This ensures binaries find the correct UCX libraries instead of system/HPC-X versions.
+RUN for bin in /opt/ucx/install/bin/*; do \
+        if [ -f "$bin" ] && file "$bin" | grep -q "ELF"; then \
+            patchelf --set-rpath '$ORIGIN/../lib' "$bin" || true; \
+        fi; \
+    done
+
+############################################################
+# Final image with RDMA-enabled UCX
+############################################################
+FROM ${BASE_IMAGE} AS final
+
+# Install runtime RDMA and plugin libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ibverbs-providers \
+        libibverbs1 \
+        librdmacm1 \
+        libibmad5 \
+        libibumad3 \
+        libfuse3-3 \
+        libfabric1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy gdrcopy shared library only (required by libuct_cuda_gdrcopy.so at runtime)
+COPY --from=ucx-builder /opt/gdrcopy/install/lib/ /tmp/gdrcopy-lib/
+RUN find /tmp/gdrcopy-lib -name '*.so*' -exec cp -a {} /opt/nvidia/holoscan/lib/ \; && \
+    rm -rf /tmp/gdrcopy-lib
+
+# Copy xpmem shared library (required by libuct_xpmem.so at runtime)
+COPY --from=ucx-builder /opt/xpmem/install/lib/ /tmp/xpmem-lib/
+RUN find /tmp/xpmem-lib -name '*.so*' -exec cp -a {} /opt/nvidia/holoscan/lib/ \; && \
+    rm -rf /tmp/xpmem-lib
+
+# Copy all UCX shared libraries (core + modules) to ensure API compatibility.
+# Excludes static libraries (.a) and libtool files (.la) to reduce image size.
+# Core libraries: libucp.so, libucs.so, libuct.so, libucm.so
+# Transport modules (in ucx/ subdir): libuct_ib.so, libuct_ib_mlx5.so, libuct_rdmacm.so, etc.
+COPY --from=ucx-builder /opt/ucx/install/lib/ /tmp/ucx-lib/
+
+# Remove old UCX libraries first to avoid symlink conflicts, then copy new ones
+RUN rm -f /opt/nvidia/holoscan/lib/lib/libuc{m,s,t,p}* && \
+    rm -f /opt/nvidia/holoscan/lib/ucx/libuct*.so* && \
+    rm -f /opt/nvidia/holoscan/lib/ucx/libucm*.so* && \
+    rm -f /opt/nvidia/holoscan/lib/ucx/libucx*.so* && \
+    find /tmp/ucx-lib -maxdepth 1 -name '*.so*' -exec cp -a {} /opt/nvidia/holoscan/lib/ \; && \
+    find /tmp/ucx-lib/ucx -name '*.so*' -exec cp -a {} /opt/nvidia/holoscan/lib/ucx/ \; && \
+    rm -rf /tmp/ucx-lib
+
+# Copy UCX binaries (ucx_info, ucx_perftest, etc.) for diagnostics and benchmarking
+COPY --from=ucx-builder /opt/ucx/install/bin/ /opt/nvidia/holoscan/bin/
+
+# Update library cache and verify installation
+RUN ldconfig && \
+    echo "=== UCX core libraries ===" && \
+    ls -la /opt/nvidia/holoscan/lib/libuc*.so* && \
+    echo "=== UCX transport modules ===" && \
+    ls -la /opt/nvidia/holoscan/lib/ucx/ && \
+    echo "=== XPMEM library ===" && \
+    ls -la /opt/nvidia/holoscan/lib/libxpmem*.so* && \
+    echo "=== Checking for all plugins ===" && \
+    ls /opt/nvidia/holoscan/lib/ucx/ | grep -E "(ib|rdmacm|gdrcopy|xpmem|mad|fuse|efa)" && \
+    echo "=== UCX binaries ===" && \
+    ls -la /opt/nvidia/holoscan/bin/ucx* && \
+    echo "=== UCX version ===" && \
+    strings /opt/nvidia/holoscan/lib/libucs.so | grep -E "^[0-9]+\.[0-9]+\.[0-9]+" | head -1 || true
