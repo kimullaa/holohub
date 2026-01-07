@@ -19,6 +19,9 @@ from argparse import ArgumentParser
 
 import cupy as cp
 import holoscan as hs
+import logging
+logger = logging.getLogger("BODY_POSE")
+
 import numpy as np
 from holoscan.core import Application, Operator, OperatorSpec
 from holoscan.gxf import Entity
@@ -86,6 +89,8 @@ class PostprocessorOp(Operator):
             "left_ankles",
             "right_ankles",
             "segments",
+            "text",
+            "lines",
         ]
 
         # Indices for each keypoint as defined by YOLOv8 pose model
@@ -122,6 +127,7 @@ class PostprocessorOp(Operator):
         """
         spec.input("in")
         spec.output("out")
+        spec.output("out_specs")
         spec.param("iou_threshold", 0.5)
         spec.param("score_threshold", 0.5)
         spec.param("image_dim", None)
@@ -151,6 +157,16 @@ class PostprocessorOp(Operator):
 
         return keypoints
 
+
+    def offset_left(self):
+        img_wh = cp.asarray(self.image_dim, dtype=cp.float32)
+        seg_len = 0.20 * cp.min(img_wh)
+
+        dir_45_left = cp.asarray([-1.0, -1.0], dtype=cp.float32) /cp.sqrt(2.0)
+        offset_45_left = seg_len * dir_45_left
+        return offset_45_left
+
+
     def compute(self, op_input, op_output, context):
         # Get input message
         in_message = op_input.receive("in")
@@ -169,16 +185,25 @@ class PostprocessorOp(Operator):
 
             for output in self.outputs:
                 out_message.add(zeros, output)
+
+
+            spec = HolovizOp.InputSpec("text", HolovizOp.InputType.TEXT)
+            spec.text = ["None" ]
+            op_output.emit([spec], "out_specs")
             op_output.emit(out_message, "out")
             return
 
         results = results.transpose([1, 0])
 
         segments = []
+        lines = []
+
         for i, detection in enumerate(results):
             # fmt: off
             kp = self.get_keypoints(detection)
+            shoulder = kp["right_shoulder"]
             # Every two points defines a segment
+
             segments.append([kp["nose"], kp["left_eye"],      # nose <-> left eye
                              kp["nose"], kp["right_eye"],     # nose <-> right eye
                              kp["left_eye"], kp["left_ear"],  # ...
@@ -198,6 +223,7 @@ class PostprocessorOp(Operator):
                              kp["left_ear"], kp["neck"],
                              kp["right_ear"], kp["neck"],
                              ])
+            lines.append([shoulder, shoulder + self.offset_left()])
             # fmt: on
 
         cx, cy, w, h = results[:, 0], results[:, 1], results[:, 2], results[:, 3]
@@ -224,19 +250,28 @@ class PostprocessorOp(Operator):
             "left_ankles": results[:, self.LEFT_ANKLE],
             "right_ankles": results[:, self.RIGHT_ANKLE],
             "segments": cp.asarray(segments),
+            "lines": cp.asarray(lines),
+            "text": cp.asarray(segments),
         }
         scores = cp.asarray(scores)
 
         out = self.nms(data, scores)
 
+
         # Rearrange boxes to be compatible with Holoviz
         out["boxes"] = cp.reshape(out["boxes"][None], (1, -1, 2))
+        out["text"] = cp.reshape(out["text"][None], (1, -1, 2))
 
         # Create output message
         out_message = Entity(context)
         for output in self.outputs:
             out_message.add(hs.as_tensor(out[output] / self.image_dim), output)
         op_output.emit(out_message, "out")
+
+        spec = HolovizOp.InputSpec("text", HolovizOp.InputType.TEXT)
+        spec.text = ["Frame 2" ]
+        op_output.emit([spec], "out_specs")
+
 
     def nms(self, inputs, scores):
         """Non-max suppression (NMS)
@@ -258,6 +293,7 @@ class PostprocessorOp(Operator):
 
         boxes = inputs["boxes"]
         segments = inputs["segments"]
+        lines = inputs["lines"]
 
         if len(boxes) == 0:
             return cp.asarray([]), cp.asarray([])
@@ -272,7 +308,7 @@ class PostprocessorOp(Operator):
         indices = cp.argsort(scores)
 
         # Output boxes and scores
-        boxes_out, segments_out, scores_out = [], [], []
+        boxes_out, segments_out, lines_out, scores_out = [], [], [], []
 
         selected_indices = []
 
@@ -284,6 +320,7 @@ class PostprocessorOp(Operator):
             # Pick bounding box with highest score
             boxes_out.append(boxes[:, index])
             segments_out.extend(segments[index])
+            lines_out.extend(lines[index])
             scores_out.append(scores[index])
 
             # Get coordinates
@@ -305,6 +342,14 @@ class PostprocessorOp(Operator):
 
         selected_indices = cp.asarray(selected_indices)
 
+        lines_cp = cp.asarray(lines_out).reshape(-1, 2, 2)
+        left_points = cp.where(
+            lines_cp[:, 0, 0:1] <= lines_cp[:, 1, 0:1],
+            lines_cp[:, 0],
+            lines_cp[:, 1],
+        )
+
+
         outputs = {
             "boxes": cp.asarray(boxes_out),
             "segments": cp.asarray(segments_out),
@@ -325,6 +370,8 @@ class PostprocessorOp(Operator):
             "right_knees": inputs["right_knees"][selected_indices],
             "left_ankles": inputs["left_ankles"][selected_indices],
             "right_ankles": inputs["right_ankles"][selected_indices],
+            "lines": cp.asarray(lines_out),
+            "text": left_points
         }
 
         return outputs
@@ -462,7 +509,7 @@ class BodyPoseEstimationApp(Application):
         self.add_flow(preprocessor, format_input)
         self.add_flow(format_input, inference, {("", "receivers")})
         self.add_flow(inference, postprocessor, {("transmitter", "in")})
-        self.add_flow(postprocessor, holoviz, {("out", "receivers")})
+        self.add_flow(postprocessor, holoviz, {("out", "receivers"), ("out_specs", "input_specs")})
         if enable_dds_publisher:
             self.add_flow(holoviz, dds_publisher, {("render_buffer_output", "input")})
 
