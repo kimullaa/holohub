@@ -33,18 +33,18 @@ add_custom_command(OUTPUT "${HOLOHUB_DATA_DIR}/body_pose_estimation/twirl.mp4"
     )
 
 # Convert the video file
-add_custom_command(OUTPUT "${HOLOHUB_DATA_DIR}/body_pose_estimation/twirl.gxf_index"
-                          "${HOLOHUB_DATA_DIR}/body_pose_estimation/twirl.gxf_entities"
-    COMMAND ffmpeg -i "${HOLOHUB_DATA_DIR}/body_pose_estimation/twirl.mp4" -pix_fmt rgb24 -f rawvideo pipe:1 |
+add_custom_command(OUTPUT "${HOLOHUB_DATA_DIR}/body_pose_estimation/sample.gxf_index"
+                          "${HOLOHUB_DATA_DIR}/body_pose_estimation/sample.gxf_entities"
+    COMMAND ffmpeg -i "${HOLOHUB_DATA_DIR}/body_pose_estimation/sample.mp4" -pix_fmt rgb24 -f rawvideo pipe:1 |
             python3 "${CMAKE_SOURCE_DIR}/utilities/convert_video_to_gxf_entities.py"
-            --directory "${HOLOHUB_DATA_DIR}/body_pose_estimation" --basename twirl --width 1080 --height 1920 --framerate 25
-    DEPENDS "${HOLOHUB_DATA_DIR}/body_pose_estimation/twirl.mp4"
+            --directory "${HOLOHUB_DATA_DIR}/body_pose_estimation" --basename sample --width 3840 --height 2160 --framerate 25
+    DEPENDS "${HOLOHUB_DATA_DIR}/body_pose_estimation/sample.mp4"
     )
 
 add_custom_target(body_pose_estimation_data ALL
                   DEPENDS
                   "${HOLOHUB_DATA_DIR}/body_pose_estimation/yolov11l-pose.onnx"
-                  "${HOLOHUB_DATA_DIR}/body_pose_estimation/twirl.gxf_index")
+                  "${HOLOHUB_DATA_DIR}/body_pose_estimation/sample.gxf_index")
 
 
 # Copy qos_profiles.xml from the dds_video application to the binary directory.

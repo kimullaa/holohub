@@ -31,8 +31,17 @@ from holoscan.operators import (
     InferenceOp,
     V4L2VideoCaptureOp,
     VideoStreamReplayerOp,
+    VideoStreamRecorderOp,
+    FormatConverterOp,
 )
-from holoscan.resources import UnboundedAllocator
+
+from holoscan.resources import (
+    BlockMemoryPool,
+    CudaStreamPool,
+    MemoryStorageType,
+    UnboundedAllocator,
+)
+
 
 
 class FormatInferenceInputOp(Operator):
@@ -269,7 +278,7 @@ class PostprocessorOp(Operator):
         op_output.emit(out_message, "out")
 
         spec = HolovizOp.InputSpec("text", HolovizOp.InputType.TEXT)
-        spec.text = ["Frame 2" ]
+        spec.text = ["Text Here" ]
         op_output.emit([spec], "out_specs")
 
 
@@ -487,6 +496,9 @@ class BodyPoseEstimationApp(Application):
         if enable_dds_publisher:
             holoviz_args["headless"] = True
             holoviz_args["enable_render_buffer_output"] = True
+
+        holoviz_args["headless"] = True
+        holoviz_args["enable_render_buffer_output"] = True
         holoviz = HolovizOp(self, allocator=pool, name="holoviz", **holoviz_args)
 
         if enable_dds_publisher:
@@ -512,6 +524,31 @@ class BodyPoseEstimationApp(Application):
         self.add_flow(postprocessor, holoviz, {("out", "receivers"), ("out_specs", "input_specs")})
         if enable_dds_publisher:
             self.add_flow(holoviz, dds_publisher, {("render_buffer_output", "input")})
+
+        memory_pool = BlockMemoryPool(self, name="pool", 
+            storage_type=MemoryStorageType.DEVICE,
+            block_size=840*2160*4*4,
+            num_blocks=3)
+        recorder_format_converter = FormatConverterOp(
+            self,
+            name="recorder_format_converter",
+            pool=memory_pool,
+            in_dtype="rgba8888",
+            out_dtype="rgb888",
+        )
+        self.add_flow(
+            holoviz,
+            recorder_format_converter,
+            {("render_buffer_output", "source_video")},
+        )
+
+        recorder = VideoStreamRecorderOp(
+            self,
+            name="recorder",
+            directory=".",
+            basename="output",
+        )
+        self.add_flow(recorder_format_converter, recorder)
 
 
 def main():
